@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import logging
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -22,6 +23,7 @@ from tracker.db import games, pitches, plate_appearances
 from tracker.hub import GameHub, newer
 from tracker.stream import (
     LIVE_GAMES_KEY,
+    EventBus,
     blocking_client,
     read_after,
     state_key,
@@ -42,7 +44,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.redis = Redis.from_url(settings.redis_url, decode_responses=True)
         app.state.stream_redis = blocking_client(settings.redis_url, settings.stream_block_ms)
         app.state.hub = GameHub(app.state.stream_redis, block_ms=settings.stream_block_ms)
+        ingester = await _start_ingester(app, settings) if settings.run_ingester else None
+        app.state.ingester = ingester
         yield
+        if ingester:
+            ingester.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await ingester
+            await app.state.mlb_client.aclose()
         await app.state.hub.close()
         await app.state.stream_redis.aclose()
         await app.state.redis.aclose()
@@ -74,6 +83,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         async with engine(request).connect() as conn:
             await conn.execute(text("select 1"))
         await redis(request).ping()
+        task: asyncio.Task[None] | None = getattr(request.app.state, "ingester", None)
+        if task is not None and task.done():
+            raise HTTPException(503, "ingester stopped")
         return {"ok": True}
 
     @app.get("/api/games")
@@ -256,6 +268,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return FileResponse(static_dir / "index.html")
 
     return app
+
+
+async def _start_ingester(app: FastAPI, settings: Settings) -> "asyncio.Task[None]":
+    from tracker.ingest import run_live
+    from tracker.mlb_client import MlbClient
+    from tracker.models.runtime import Models
+
+    tracker_log = logging.getLogger("tracker")
+    if not tracker_log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        tracker_log.addHandler(handler)
+        tracker_log.setLevel(logging.INFO)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    tracker_log.info("starting embedded ingester")
+    app.state.mlb_client = MlbClient(settings.mlb_base_url)
+    bus = EventBus(
+        app.state.redis,
+        maxlen=settings.stream_maxlen,
+        finished_ttl=settings.finished_stream_ttl_seconds,
+    )
+    models = await asyncio.to_thread(Models.load, settings.artifacts_dir)
+    return asyncio.create_task(
+        run_live(
+            app.state.mlb_client,
+            app.state.engine,
+            bus,
+            models,
+            interval=settings.schedule_interval_seconds,
+            floor=settings.poll_floor_seconds,
+        ),
+        name="ingester",
+    )
 
 
 def _game_pitches(game_pk: int) -> Select[Any]:

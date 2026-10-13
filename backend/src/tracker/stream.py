@@ -55,9 +55,10 @@ def to_message(stream_id: str, fields: dict[str, str]) -> dict[str, Any]:
 
 
 class EventBus:
-    def __init__(self, redis: Redis, maxlen: int = 20_000) -> None:
+    def __init__(self, redis: Redis, maxlen: int = 20_000, finished_ttl: int | None = None) -> None:
         self.redis = redis
         self.maxlen = maxlen
+        self.finished_ttl = finished_ttl
 
     async def publish_many(
         self, game_pk: int, events: list[tuple[str, dict[str, Any]]]
@@ -82,6 +83,9 @@ class EventBus:
                 pipe.sadd(LIVE_GAMES_KEY, game_pk)
             else:
                 pipe.srem(LIVE_GAMES_KEY, game_pk)
+                if self.finished_ttl:
+                    pipe.expire(stream_key(game_pk), self.finished_ttl)
+                    pipe.expire(state_key(game_pk), self.finished_ttl)
             await pipe.execute()
 
     async def reset(self, game_pk: int) -> None:

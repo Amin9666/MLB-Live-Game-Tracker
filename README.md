@@ -111,17 +111,32 @@ uv run tracker record 849809                     # record every timecode of a ga
 
 The WebSocket server runs one Redis reader per game and fans events out to every subscriber. A client that falls too far behind is disconnected with code 1013 and reconnects using its last stream id. Since the database holds the state and Redis holds the event log, the API can run as several replicas without sticky sessions.
 
-## CI/CD
+## CI/CD and deployment
 
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs these jobs:
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs these jobs on every push and pull request:
 
 - **Backend checks:** ruff, mypy, and an Alembic migration against a fresh Postgres.
 - **Backend tests:** pytest against Postgres and Redis service containers.
 - **Frontend:** typecheck, vitest and production build.
 - **Image:** a Docker build, pushed to GHCR when `main` changes.
-- **Deploy:** `flyctl deploy` when `FLY_API_TOKEN` is set.
 
-`fly.toml` runs the API and the ingester as two process groups from the same image, and applies migrations through a release command.
+The app deploys to Render's free tier using the blueprint in [`render.yaml`](render.yaml):
+
+- **One Docker web service.** It runs migrations on boot, serves the UI and API, and runs the ingester in the same process (`RUN_INGESTER=true`), because Render has no free background workers.
+- **Free Postgres and Key Value (Redis).**
+- **Deploys gated on CI.** With `autoDeployTrigger: checksPass`, Render deploys a commit to `main` only after the CI checks pass.
+- **Health check restarts.** `/healthz` returns 503 if the embedded ingester task has died, so Render restarts the service.
+
+Free-tier limits and how this setup handles them:
+
+| Limit | Handling |
+|---|---|
+| The web service sleeps after 15 min without traffic | `.github/workflows/keepalive.yml` pings `/healthz` every 10 min. Set the repo variable `APP_URL` to enable it. |
+| 512 MB RAM | API and ingester together use about 170 MB at idle. |
+| 25 MB Key Value | Streams are capped at 3,000 events per game, and a finished game's stream expires after 6 h. |
+| Free Postgres expires after 30 days | Recreate it, or point `DATABASE_URL` at a free Neon database. |
+
+Locally, `docker-compose.yml` runs the API and ingester as separate services, which is how it would run on a paid tier.
 
 ## Layout
 

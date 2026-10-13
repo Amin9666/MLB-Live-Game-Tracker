@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: mlb-live-tracker
+    runtime: docker
+    plan: free
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mlb-tracker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mlb-tracker-redis
+          property: connectionString
+      - key: RUN_INGESTER
+        value: "true"
+      - key: STREAM_MAXLEN
+        value: "3000"
+
+  - type: keyvalue
+    name: mlb-tracker-redis
+    plan: free
+    region: ohio
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+databases:
+  - name: mlb-tracker-db
+    plan: free
+    region: ohio
+    databaseName: tracker
+    user: tracker
