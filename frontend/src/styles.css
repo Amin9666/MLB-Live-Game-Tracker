@@ -1,0 +1,530 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #15181d;
+  --muted: #6b7280;
+  --border: #e3e6eb;
+  --accent: #0b5fff;
+  --home: #0b5fff;
+  --away: #d9480f;
+  --grass: #e6f2e6;
+  --dirt: #f1e6d6;
+  --zone: #15181d;
+  --good: #1a7f37;
+  --bad: #c62828;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --text: #e8eaed;
+    --muted: #9aa0a6;
+    --border: #2a2f3a;
+    --accent: #6ea8ff;
+    --home: #6ea8ff;
+    --away: #ff8a4c;
+    --grass: #16261a;
+    --dirt: #2c241a;
+    --zone: #e8eaed;
+    --good: #4ac26b;
+    --bad: #ff6b6b;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+input[type="date"],
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.game-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 0;
+}
+
+.game-chip {
+  display: grid;
+  gap: 2px;
+  min-width: 96px;
+  text-align: left;
+  position: relative;
+}
+
+.game-chip.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.live-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bad);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.game-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.status-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.conn {
+  font-size: 12px;
+}
+
+.conn.open::before {
+  content: "●";
+  color: var(--good);
+  margin-right: 6px;
+}
+
+.conn.reconnecting::before,
+.conn.error::before {
+  content: "●";
+  color: var(--bad);
+  margin-right: 6px;
+}
+
+.card,
+.scoreboard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 12px;
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 24px;
+}
+
+.teams {
+  display: grid;
+  gap: 4px;
+}
+
+.team-row {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.situation {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.inning {
+  font-weight: 600;
+}
+
+.bases {
+  width: 60px;
+}
+
+.base {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+
+.base.on {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.count {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.outs {
+  display: flex;
+  gap: 4px;
+}
+
+.out {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+}
+
+.out.on {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.wp-bar {
+  min-width: 0;
+}
+
+.wp-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.wp-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--home);
+  overflow: hidden;
+}
+
+.wp-away {
+  height: 100%;
+  background: var(--away);
+  transition: width 0.4s ease;
+}
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.strike-zone {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.zone {
+  fill: none;
+  stroke: var(--zone);
+  stroke-width: 1.5;
+}
+
+.zone-grid line {
+  stroke: var(--border);
+}
+
+.plate {
+  fill: var(--border);
+}
+
+.pitch circle {
+  stroke: var(--card);
+  stroke-width: 1;
+  opacity: 0.85;
+}
+
+.pitch.latest circle {
+  stroke: var(--text);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.pitch-num {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #111;
+  pointer-events: none;
+}
+
+.field-grass {
+  fill: var(--grass);
+}
+
+.field-dirt {
+  fill: var(--dirt);
+}
+
+.field-diamond {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 0.8;
+}
+
+.foul-line {
+  stroke: var(--muted);
+  stroke-width: 0.8;
+}
+
+.bip {
+  stroke-width: 1.8;
+}
+
+.bip.top {
+  stroke: var(--away);
+}
+
+.bip.bottom {
+  stroke: var(--home);
+}
+
+.bip.top.hit {
+  fill: var(--away);
+}
+
+.bip.bottom.hit {
+  fill: var(--home);
+}
+
+.bip.out {
+  fill: var(--card);
+}
+
+.grid line,
+line.grid {
+  stroke: var(--border);
+}
+
+.axis-mid {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+}
+
+.axis-label {
+  font-size: 10px;
+  fill: var(--muted);
+}
+
+.team-label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.team-label.home {
+  fill: var(--home);
+}
+
+.team-label.away {
+  fill: var(--away);
+}
+
+.wp-line {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.wp-fill.home {
+  fill: var(--home);
+  opacity: 0.18;
+}
+
+.wp-fill.away {
+  fill: var(--away);
+  opacity: 0.18;
+}
+
+.wp-now {
+  fill: var(--text);
+}
+
+.wp-hover line {
+  stroke: var(--muted);
+}
+
+.wp-hover circle {
+  fill: var(--accent);
+}
+
+.wp-hover text {
+  font-size: 11px;
+  fill: var(--text);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  border: 0;
+  border-radius: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.segmented button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.legend {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+
+.chip {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+.chip.ring.top {
+  border: 2px solid var(--away);
+}
+
+.chip.ring.bottom {
+  border: 2px solid var(--home);
+}
+
+.chip.solid {
+  background: var(--muted);
+}
+
+.chip.hollow {
+  border: 2px solid var(--muted);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.pitch-log {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pitch-log th,
+.pitch-log td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pitch-log th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pitch-log .num {
+  text-align: right;
+}
+
+.pitch-log .agree {
+  color: var(--good);
+}
+
+.pitch-log .disagree {
+  color: var(--bad);
+}
+
+@media (max-width: 640px) {
+  .scoreboard {
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+  }
+
+  .wp-bar {
+    grid-column: 1 / -1;
+  }
+
+  .pitch-log .matchup,
+  .pitch-log .result {
+    display: none;
+  }
+}

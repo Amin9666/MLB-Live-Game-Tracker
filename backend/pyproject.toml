@@ -1,0 +1,62 @@
+[project]
+name = "mlb-live-tracker"
+version = "0.1.0"
+description = "Real-time MLB game tracker built on the MLB Stats API live feed"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "alembic>=1.13",
+    "asyncpg>=0.29",
+    "duckdb>=1.0",
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "joblib>=1.4",
+    "jsonpatch>=1.33",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "redis>=5.0",
+    "scikit-learn>=1.5",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.scripts]
+tracker = "tracker.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.10",
+    "pandas-stubs>=2.2",
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tracker"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+files = ["src"]
