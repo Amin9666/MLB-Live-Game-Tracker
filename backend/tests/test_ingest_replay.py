@@ -218,3 +218,15 @@ async def test_http_source_bypasses_stale_cache(final_frame: dict[str, Any]) -> 
         now[0] = 50
         assert frames.timecode_of(await source.fetch(GAME_PK) or {}) == "20261012_031300"
     assert source.cache_bypasses == 1
+
+
+async def test_finished_game_stream_expires(
+    final_frame: dict[str, Any], engine: AsyncEngine, redis: Redis
+) -> None:
+    bus = EventBus(redis, finished_ttl=3600)
+    ingester = GameIngester(
+        GAME_PK, ListFeedSource([final_frame]), engine, bus, Models(), final_grace_polls=0
+    )
+    await _drain(ingester)
+    ttl = await redis.ttl(stream_key(GAME_PK))
+    assert 0 < ttl <= 3600

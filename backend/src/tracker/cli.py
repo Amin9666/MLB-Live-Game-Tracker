@@ -78,7 +78,9 @@ async def _dispatch(args: argparse.Namespace) -> None:
 
     engine = create_async_engine(settings.database_url, pool_pre_ping=True)
     redis: Redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    bus = EventBus(redis, maxlen=settings.stream_maxlen)
+    bus = EventBus(
+        redis, maxlen=settings.stream_maxlen, finished_ttl=settings.finished_stream_ttl_seconds
+    )
     models = Models.load(settings.artifacts_dir)
     try:
         if args.cmd == "ingest":

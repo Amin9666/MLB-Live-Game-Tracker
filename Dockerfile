@@ -14,6 +14,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY backend/src ./src
 COPY backend/alembic.ini ./
 COPY backend/migrations ./migrations
+COPY backend/scripts/start.sh ./start.sh
 COPY backend/artifacts ./artifacts
 RUN uv sync --frozen --no-dev
 COPY --from=web /web/dist ./static
@@ -23,4 +24,4 @@ ENV PATH=/app/.venv/bin:$PATH \
 RUN useradd --create-home app && chown -R app /app
 USER app
 EXPOSE 8000
-CMD ["uvicorn", "tracker.api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+CMD ["./start.sh"]

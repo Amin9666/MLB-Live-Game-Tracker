@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     static_dir: Path | None = None
     stream_maxlen: int = 20_000
     stream_block_ms: int = 15_000
+    finished_stream_ttl_seconds: int = 6 * 3600
+    run_ingester: bool = False
     poll_floor_seconds: float = 2.0
     schedule_interval_seconds: float = 60.0
     full_frame_every: int = 100

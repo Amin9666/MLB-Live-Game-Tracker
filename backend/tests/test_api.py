@@ -122,3 +122,20 @@ def test_ws_rejects_malformed_last_id(client: TestClient) -> None:
     ):
         ws.receive_json()
     assert exc.value.code == 1008
+
+
+def test_healthz_fails_when_embedded_ingester_dies(client: TestClient) -> None:
+    async def boom() -> None:
+        raise RuntimeError("crashed")
+
+    async def make_dead_task() -> "asyncio.Task[None]":
+        task = asyncio.ensure_future(boom())
+        await asyncio.sleep(0)
+        return task
+
+    dead = client.portal.call(make_dead_task)  # type: ignore[union-attr]
+    client.app.state.ingester = dead  # type: ignore[attr-defined]
+    try:
+        assert client.get("/healthz").status_code == 503
+    finally:
+        client.app.state.ingester = None  # type: ignore[attr-defined]
